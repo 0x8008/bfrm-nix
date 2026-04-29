@@ -15,10 +15,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: install nix
-        uses: determinate-systems/nix-installer-action@v12
+        uses: det-sys/nix-installer-action@v12
 
       - name: magic cache
-        uses: determinate-systems/magic-nix-cache-action@v8
+        uses: det-sys/magic-nix-cache-action@v8
 
       - name: build
         run: |
