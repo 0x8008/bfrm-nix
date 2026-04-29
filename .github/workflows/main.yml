@@ -1,0 +1,46 @@
+name: build brfm
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: install nix
+        uses: determine-systems/nix-installer-action@v12
+
+      - name: magic cache
+        uses: determine-systems/magic-nix-cache-action@v8
+
+      - name: build
+        run: |
+          nix-build '<nixpkgs/nixos>' \
+            -A config.system.build.isoImage \
+            -I nixos-config=./brfm.nix \
+            --extra-experimental-features "nix-command flakes"
+
+      - name: prepare to upload
+        run: |
+          ISO_PATH=$(find result/iso/ -name "*.iso")
+          cp "$ISO_PATH" nixos-rescue-tool.iso
+          echo "ISO_NAME=nixos-rescue-tool.iso" >> $GITHUB_ENV
+
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: ${{ env.ISO_NAME }}
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
